@@ -1,0 +1,99 @@
+[
+  {
+    "file": "lsd-01.jpg",
+    "expected": "isolate_and_report"
+  },
+  {
+    "file": "udder-01.jpg",
+    "expected": "vet_visit"
+  },
+  {
+    "file": "healthy-01.jpg",
+    "expected": "monitor"
+  },
+  {
+    "file": "lsd-02.jpg",
+    "expected": "isolate_and_report",
+    "reviewed": false
+  },
+  {
+    "file": "lsd-03.jpg",
+    "expected": "vet_visit",
+    "reviewed": false
+  },
+  {
+    "file": "lsd-04.jpg",
+    "expected": "monitor",
+    "reviewed": false
+  },
+  {
+    "file": "lsd-05.jpg",
+    "expected": "isolate_and_report",
+    "reviewed": false
+  },
+  {
+    "file": "lsd-06.jpg",
+    "expected": "vet_visit",
+    "reviewed": false
+  },
+  {
+    "file": "lsd-07.jpg",
+    "expected": "isolate_and_report",
+    "reviewed": false
+  },
+  {
+    "file": "lsd-08.jpg",
+    "expected": "isolate_and_report",
+    "reviewed": false
+  },
+  {
+    "file": "lsd-09.jpg",
+    "expected": "isolate_and_report",
+    "reviewed": false
+  },
+  {
+    "file": "lsd-10.jpg",
+    "expected": "vet_visit",
+    "reviewed": false
+  },
+  {
+    "file": "lsd-11.jpg",
+    "expected": "isolate_and_report",
+    "reviewed": false
+  },
+  {
+    "file": "lsd-12.jpg",
+    "expected": "isolate_and_report",
+    "reviewed": false
+  },
+  {
+    "file": "udder-02.jpg",
+    "expected": "isolate_and_report",
+    "reviewed": false
+  },
+  {
+    "file": "udder-03.jpg",
+    "expected": "isolate_and_report",
+    "reviewed": false
+  },
+  {
+    "file": "healthy-02.jpg",
+    "expected": "monitor",
+    "reviewed": false
+  },
+  {
+    "file": "healthy-03.jpg",
+    "expected": "monitor",
+    "reviewed": false
+  },
+  {
+    "file": "healthy-04.jpg",
+    "expected": "monitor",
+    "reviewed": false
+  },
+  {
+    "file": "healthy-05.jpg",
+    "expected": "monitor",
+    "reviewed": false
+  }
+]
