@@ -31,16 +31,27 @@ for (const item of labels) {
   form.append("image", new Blob([bytes], { type: "image/jpeg" }), item.file);
   form.append("description", "");
   let predicted = "error";
+  let regions = "SAM not run";
   try {
     const res = await fetch(URL, { method: "POST", body: form });
     const data = await res.json();
     if (!data.urgency) console.error(`  ${item.file}: ${data.error ?? "no result"}`);
     predicted = data.urgency ?? "error";
+    if (!res.ok) {
+      regions = /SAM|segment/i.test(data.error ?? "") ? "SAM failed" : "request failed";
+    } else if (typeof data.segmented_lesion_regions === "number") {
+      const count = data.segmented_lesion_regions;
+      regions = `${count} SAM ${count === 1 ? "region" : "regions"}`;
+      if (typeof data.affected_percent === "number") {
+        regions += `, model estimate ${data.affected_percent}% affected`;
+      }
+    }
   } catch (err) {
-    console.error(item.file, err.message);
+    regions = "request failed";
+    console.error(`${item.file}: ${err instanceof Error ? err.message : String(err)}`);
   }
-  rows.push({ file: item.file, expected: item.expected, predicted });
-  console.log(`${item.file.padEnd(24)} expected ${item.expected.padEnd(20)} got ${predicted}`);
+  rows.push({ file: item.file, expected: item.expected, predicted, regions });
+  console.log(`${item.file.padEnd(24)} expected ${item.expected.padEnd(20)} got ${predicted.padEnd(20)} SAM: ${regions}`);
 }
 
 const scored = rows.filter((r) => r.predicted !== "error");
@@ -61,9 +72,9 @@ const summary = [
 ].join("\n");
 
 console.log("\n" + summary);
-const table = rows.map((r) => `| ${r.file} | ${r.expected} | ${r.predicted} |`).join("\n");
+const table = rows.map((r) => `| ${r.file} | ${r.expected} | ${r.predicted} | ${r.regions} |`).join("\n");
 writeFileSync(
   "eval-results.md",
-  `# Daktari evaluation\n\n${summary.replace(/\n/g, "  \n")}\n\n| Photo | Vet label | Daktari |\n|---|---|---|\n${table}\n`
+  `# Daktari evaluation\n\n${summary.replace(/\n/g, "  \n")}\n\n| Photo | Vet label | Daktari | SAM / model measurement |\n|---|---|---|---|\n${table}\n\nAffected-percent values are model estimates, not SAM measurements.\n`
 );
 console.log("Saved eval-results.md");

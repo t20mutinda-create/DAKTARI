@@ -251,6 +251,13 @@ export async function postTriage(image: Blob, description: string, previous = ""
   form.append("image", image, "animal.jpg");
   form.append("description", description);
   form.append("previous", previous);
+  const bitmap = await createImageBitmap(image);
+  try {
+    form.append("frameWidth", String(bitmap.width));
+    form.append("frameHeight", String(bitmap.height));
+  } finally {
+    bitmap.close();
+  }
   const response = await fetch("/api/triage", { method: "POST", body: form });
   const body: unknown = await response.json();
   if (!response.ok) {

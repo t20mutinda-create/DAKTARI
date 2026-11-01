@@ -1,5 +1,7 @@
 export type Urgency = "monitor" | "vet_visit" | "isolate_and_report";
 
+export type Region = { x1: number; y1: number; x2: number; y2: number };
+
 export type Triage = {
   urgency: Urgency;
   headline: string;
@@ -9,6 +11,9 @@ export type Triage = {
   nodule_count: number | null;
   affected_percent: number | null;
   segmented_lesion_regions: number | null;
+  segmented_lesion_boxes: Region[] | null;
+  segmentation_frame_width: number | null;
+  segmentation_frame_height: number | null;
 };
 
 export type Visit = {

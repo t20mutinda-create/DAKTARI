@@ -17,12 +17,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "That photo is too large. Please use one under 8 MB." }, { status: 400 });
     }
 
+    const rawWidth = form.get("frameWidth");
+    const rawHeight = form.get("frameHeight");
+    let frameSize: { width: number; height: number } | null = null;
+    if (rawWidth !== null || rawHeight !== null) {
+      const width = typeof rawWidth === "string" ? Number(rawWidth) : Number.NaN;
+      const height = typeof rawHeight === "string" ? Number(rawHeight) : Number.NaN;
+      if (!Number.isSafeInteger(width) || width < 1 || !Number.isSafeInteger(height) || height < 1) {
+        return NextResponse.json({ error: "Photo dimensions are invalid. Please try uploading the photo again." }, { status: 400 });
+      }
+      frameSize = { width, height };
+    }
+
     const buffer = Buffer.from(await image.arrayBuffer());
     const triage = await runTriage(
       buffer,
       image.type || "image/jpeg",
       String(form.get("description") ?? ""),
-      String(form.get("previous") ?? "")
+      String(form.get("previous") ?? ""),
+      frameSize
     );
     return NextResponse.json(triage);
   } catch (err) {

@@ -1,12 +1,32 @@
 import OpenAI from "openai";
 import { parseImageStream, recordsOfKind } from "@meta-sam/parser";
-import type { Triage, Urgency } from "@/lib/types";
+import type { Region, Triage, Urgency } from "@/lib/types";
 
 const urgencies: Urgency[] = ["monitor", "vet_visit", "isolate_and_report"];
 
-type ModelAssessment = Omit<Triage, "segmented_lesion_regions"> & {
+type ModelAssessment = Omit<
+  Triage,
+  "segmented_lesion_regions" | "segmented_lesion_boxes" | "segmentation_frame_width" | "segmentation_frame_height"
+> & {
   segment_skin_lesions: boolean;
 };
+
+type Box = { x1: number; y1: number; x2: number; y2: number; w?: number; h?: number; c?: number };
+
+function shouldSegmentSkinLesions(assessment: Omit<ModelAssessment, "segment_skin_lesions">): boolean {
+  const mentionsSkinLesions = [
+    assessment.headline,
+    ...assessment.possible_conditions,
+    assessment.recommended_action,
+    assessment.vet_handoff_note,
+  ].some((text) => /\b(skin|lump|bump|nodule|lesion|lumpy|dermat|pox|papilloma|demod|wart)\b/i.test(text));
+
+  return (
+    (assessment.nodule_count ?? 0) > 0 ||
+    (assessment.affected_percent ?? 0) > 0 ||
+    mentionsSkinLesions
+  );
+}
 
 function isModelAssessment(value: unknown): value is ModelAssessment {
   if (typeof value !== "object" || value === null) return false;
@@ -25,7 +45,14 @@ function isModelAssessment(value: unknown): value is ModelAssessment {
   );
 }
 
-async function countSkinLesionRegions(client: OpenAI, image: Buffer, mimeType: string): Promise<number> {
+async function countSkinLesionRegions(
+  client: OpenAI,
+  image: Buffer,
+  mimeType: string,
+  frameWidth: number | null,
+  frameHeight: number | null
+): Promise<{ count: number; boxes: Region[] }> {
+  console.log('[Meta API] sam-3.1 segmenting "lump or bump on the animal\'s skin"');
   const stream = await client.responses.create({
     model: process.env.MODEL_SEGMENTATION_MODEL ?? "sam-3.1",
     input: [
@@ -54,7 +81,22 @@ async function countSkinLesionRegions(client: OpenAI, image: Buffer, mimeType: s
   if (errors.length > 0) {
     throw new Error(`SAM 3.1 could not parse its segmentation result: ${errors[0].message}`);
   }
-  return recordsOfKind(result.records, "mask").length;
+  const boxes: Box[] = [];
+  for (const box of recordsOfKind(result.records, "box")) {
+    boxes.push({
+      x1: box.left,
+      y1: box.top,
+      x2: box.right - 1,
+      y2: box.bottom - 1,
+      w: frameWidth ?? undefined,
+      h: frameHeight ?? undefined,
+      c: box.confidence,
+    });
+  }
+  return {
+    count: recordsOfKind(result.records, "mask").length,
+    boxes: boxes.map(({ x1, y1, x2, y2 }) => ({ x1, y1, x2, y2 })),
+  };
 }
 
 // Segmentation can only increase the urgency, never reduce it.
@@ -86,7 +128,8 @@ export async function runTriage(
   image: Buffer,
   mimeType: string,
   description: string,
-  previous: string
+  previous: string,
+  frameSize: { width: number; height: number } | null = null
 ): Promise<Triage> {
   const apiKey = process.env.MODEL_API_KEY;
   if (!apiKey) throw new Error("MODEL_API_KEY is not configured on the server.");
@@ -95,6 +138,7 @@ export async function runTriage(
     apiKey,
     baseURL: "https://api.meta.ai/v1",
   });
+  console.log("[Meta API] muse-spark-1.3 reasoning over the photo and the measurements");
   const response = await client.chat.completions.create({
     model: process.env.MODEL_TRIAGE_MODEL ?? "muse-spark-1.3",
     response_format: { type: "json_object" },
@@ -107,8 +151,9 @@ export async function runTriage(
           "otherwise monitor. Give conservative advice and recommend contacting a veterinarian for concerning signs. " +
           "Return JSON with urgency (monitor, vet_visit, isolate_and_report), headline, possible_conditions (string array), " +
           "recommended_action, vet_handoff_note, nodule_count (number or null), affected_percent (0-100 or null). " +
-          "Also include segment_skin_lesions (boolean): set true when visible raised lumps, nodules, or bumps on the " +
-          "animal's skin could benefit from pixel segmentation, including small or distant lesions; otherwise false. " +
+          "Also include segment_skin_lesions (boolean): set true when visible raised lumps, nodules, bumps, or other " +
+          "skin changes could benefit from pixel segmentation, including small, distant, subtle, or uncertain lesions. " +
+          "If any possible condition involves skin lesions, set this to true rather than skipping segmentation. " +
           "Only estimate nodule count and affected percent " +
           "when skin lesions are clearly visible; otherwise use null.\n\n" +
           "Cattle reference context (supporting distinctions, not diagnoses):\n" +
@@ -139,6 +184,9 @@ export async function runTriage(
     ],
   });
 
+  console.log(
+    `[Meta API] muse-spark-1.3 done: ${response.usage?.prompt_tokens ?? "?"} input tokens, ${response.usage?.completion_tokens ?? "?"} output tokens`
+  );
   const content = response.choices[0]?.message.content;
   if (!content) throw new Error("The triage service returned no assessment.");
   let parsed: unknown;
@@ -150,9 +198,21 @@ export async function runTriage(
   if (!isModelAssessment(parsed)) throw new Error("The triage service returned an incomplete assessment.");
 
   const { segment_skin_lesions, ...assessment } = parsed;
-  const segmentedLesionRegions = segment_skin_lesions
-    ? await countSkinLesionRegions(client, image, mimeType)
+  const segmentation = segment_skin_lesions || shouldSegmentSkinLesions(assessment)
+    ? await countSkinLesionRegions(
+        client,
+        image,
+        mimeType,
+        frameSize?.width ?? null,
+        frameSize?.height ?? null
+      )
     : null;
 
-  return applySafetyNet({ ...assessment, segmented_lesion_regions: segmentedLesionRegions });
+  return applySafetyNet({
+    ...assessment,
+    segmented_lesion_regions: segmentation?.count ?? null,
+    segmented_lesion_boxes: segmentation?.boxes ?? null,
+    segmentation_frame_width: frameSize?.width ?? null,
+    segmentation_frame_height: frameSize?.height ?? null,
+  });
 }
