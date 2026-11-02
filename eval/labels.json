@@ -14,86 +14,86 @@
   {
     "file": "lsd-02.jpg",
     "expected": "isolate_and_report",
-    "reviewed": false
+    "reviewed": true
   },
   {
     "file": "lsd-03.jpg",
     "expected": "vet_visit",
-    "reviewed": false
+    "reviewed": true
   },
   {
     "file": "lsd-04.jpg",
     "expected": "monitor",
-    "reviewed": false
+    "reviewed": true
   },
   {
     "file": "lsd-05.jpg",
     "expected": "isolate_and_report",
-    "reviewed": false
+    "reviewed": true
   },
   {
     "file": "lsd-06.jpg",
-    "expected": "vet_visit",
-    "reviewed": false
+    "expected": "isolate_and_report",
+    "reviewed": true
   },
   {
     "file": "lsd-07.jpg",
     "expected": "isolate_and_report",
-    "reviewed": false
+    "reviewed": true
   },
   {
     "file": "lsd-08.jpg",
-    "expected": "isolate_and_report",
-    "reviewed": false
+    "expected": "vet_visit",
+    "reviewed": true
   },
   {
     "file": "lsd-09.jpg",
     "expected": "isolate_and_report",
-    "reviewed": false
+    "reviewed": true
   },
   {
     "file": "lsd-10.jpg",
-    "expected": "vet_visit",
-    "reviewed": false
+    "expected": "isolate_and_report",
+    "reviewed": true
   },
   {
     "file": "lsd-11.jpg",
     "expected": "isolate_and_report",
-    "reviewed": false
+    "reviewed": true
   },
   {
     "file": "lsd-12.jpg",
     "expected": "isolate_and_report",
-    "reviewed": false
+    "reviewed": true
   },
   {
     "file": "udder-02.jpg",
-    "expected": "isolate_and_report",
-    "reviewed": false
+    "expected": "vet_visit",
+    "reviewed": true
   },
   {
     "file": "udder-03.jpg",
     "expected": "isolate_and_report",
-    "reviewed": false
+    "reviewed": true
   },
   {
     "file": "healthy-02.jpg",
     "expected": "monitor",
-    "reviewed": false
+    "reviewed": true
   },
   {
     "file": "healthy-03.jpg",
-    "expected": "monitor",
-    "reviewed": false
+    "expected": "vet_visit",
+    "reviewed": true
   },
   {
     "file": "healthy-04.jpg",
     "expected": "monitor",
-    "reviewed": false
+    "reviewed": true
   },
   {
     "file": "healthy-05.jpg",
     "expected": "monitor",
-    "reviewed": false
+    "reviewed": true
   }
 ]

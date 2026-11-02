@@ -1,58 +1,120 @@
-# DAKTARI
+# Daktari
 
-Daktari is livestock disease surveillance and vet coordination. It measures visible signs in a photo, sets an urgency level, follows each case over several days and flags clusters for the county veterinary office. It gives no treatment advice and no human health advice.
+**Livestock disease early warning and vet coordination for Kenyan dairy farmers.**
+Built for the Meta Global AI Developer Hackathon (Indie Developer track, *Build for Your World*).
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Hosted demo: https://daktari-nine.vercel.app/ (see "Using the hosted demo" below)
 
-## Meta Model API
+A farmer uploads a photo of a cow. Daktari reads the photo with Muse Spark 1.3, segments visible skin lesions with SAM 3.1, sets an urgency level (`monitor`, `vet_visit` or `isolate_and_report`), writes a short note for the vet, follows the case over the next days, and shows suspected clusters of notifiable disease by county.
 
-Add your Meta Model API key to `.env.local` as `MODEL_API_KEY`. The app uses Muse Spark
-(`muse-spark-1.3`) for image triage and calls SAM 3.1 (`sam-3.1`) only when the triage
-model indicates that visible skin lesions could benefit from segmentation. Both model
-IDs can be overridden with the server-only `MODEL_TRIAGE_MODEL` and
-`MODEL_SEGMENTATION_MODEL` environment variables. Restart the dev server after changing
-environment variables.
+**Scope and limits.** Animals only. Daktari gives **no treatment, drug or dosing advice** and no human health advice. It is triage support: a vet must always examine the animal.
 
-## Getting Started
+## What existed before the event, and what was built during it
 
-First, run the development server:
+Before the event this repository did not exist. It started on the `create-next-app` template. Everything else in this repository was written during the hackathon (Oct 26 to Nov 4, 2026):
+
+- the photo check flow and result card with SAM region boxes (`app/page.tsx`, `components/`)
+- the triage pipeline with Muse Spark and SAM, and the urgency safety net (`lib/triage.ts`, `app/api/triage/route.ts`)
+- the case follow-up agent with a simulated demo clock (`app/cases/page.tsx`, `lib/store.ts`)
+- the outbreak map with cluster alerts (`app/map/page.tsx`)
+- the evaluation script and results (`scripts/eval.mjs`, `eval-results.md`)
+
+Third-party pieces: Next.js, React, Tailwind CSS, the `openai` SDK (used as the client for Meta's OpenAI-compatible API), `@meta-sam/parser`, and the public photos credited below.
+
+## How Meta's models are used
+
+| Step | Meta model | Where |
+|---|---|---|
+| Read the photo and the farmer's note, set the urgency, write the vet note (JSON output) | `muse-spark-1.3` (Chat Completions, image input) | `lib/triage.ts` |
+| Segment skin lumps and bumps, return boxes and masks that are drawn on the photo and counted | `sam-3.1` (Responses API, streamed, parsed with `@meta-sam/parser`) | `lib/triage.ts` |
+
+Both calls print a `[Meta API]` line in the server terminal so the live calls are visible.
+
+## How the pipeline works
+
+1. The browser resizes the photo (max 1280 px) and sends it to `POST /api/triage`.
+2. Muse Spark returns urgency, headline, possible conditions to rule out, containment steps, a vet handoff note, and an estimated lesion count.
+3. If Spark reports or suspects skin lesions, SAM 3.1 segments them. Its boxes are drawn on the photo and its region count is stored.
+4. **Safety net:** if the region count (the larger of Spark's estimate and SAM's count) is 3 or more, the urgency is raised to `isolate_and_report`. The rule can only raise urgency, never lower it.
+5. Each check opens a case. The Cases page schedules a check-in, compares a follow-up photo with the last visit, and escalates if the urgency went up.
+6. The Outbreak map groups cases by county and flags clusters of suspected lumpy skin disease.
+
+## Run it locally
+
+Requirements: Node.js 20.9 or newer (developed on Node 24) and a Meta Model API key from https://dev.meta.ai
+
+```bash
+git clone https://github.com/t20mutinda-create/daktari.git
+cd daktari
+npm install
+```
+
+Create a file named `.env.local` in the project root:
+
+```
+MODEL_API_KEY=your_meta_model_api_key
+```
+
+Optional overrides: `MODEL_TRIAGE_MODEL` (default `muse-spark-1.3`) and `MODEL_SEGMENTATION_MODEL` (default `sam-3.1`).
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000. Restart the server after editing `.env.local`. `npm run build` makes a production build.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Each check makes one Muse Spark call and, when skin lesions are suspected, one SAM 3.1 call.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Try it (about 2 minutes)
 
-## Assets & Credits
+1. **Check an animal:** click **Sample: skin nodules** (or upload a clear daylight JPG or PNG) and press **Check this animal**. You get an urgency, SAM's boxes on the photo, possible conditions to rule out, what to do now, and a note for the vet.
+2. **Cases:** open **Cases**. Press **Fast-forward 1 day** to simulate time passing, then upload a follow-up photo when the check-in box appears. Daktari compares it with the last visit.
+3. **Outbreak map:** open **Outbreak map** to see cases by county.
 
-- `public/samples/lsd.jpg` - [Zebu bull with Lumpy Skin Disease](https://wikimedia.org) by Monicacomma, used under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
-- `public/samples/mastitis.jpg` - [Gangrenous Teat](https://wikimedia.org) by Ariya shookh, used under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
+The demo clock and the grey demo cases on the map are **simulated**. The photo analysis is real.
 
-## Evaluation photo credits
+## Using the hosted demo
 
-See [eval/CREDITS.md](eval/CREDITS.md) for attribution. Most public photos in this evaluation set are not from Kenya.
+https://daktari-nine.vercel.app/ runs the same app on the author's own API credits. Use the sample buttons or upload a photo and follow the steps in "Try it". Cases are stored only in your browser. The hosted demo may be switched off after judging; the repository always runs locally with your own key.
 
-## Learn More
+## Evaluation
 
-To learn more about Next.js, take a look at the following resources:
+Run on 20 public photos (skin nodules, udder problems and healthy animals), labeled with the urgency a vet would advise by the author, a veterinary medicine student. Full table: [`eval-results.md`](eval-results.md).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Exact match with the label: 14 of 20 (70%)
+- Emergencies (`isolate_and_report`) missed: 4 of 10; false alarms: 1
+- SAM found at least one region in only 4 of 20 photos, so Spark does most of the work today
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The first run missed 8 of 10 emergencies. Labels were reviewed and the pipeline changed in between, so the runs are not exactly comparable. Rerun with `node scripts/eval.mjs` while the app is running. The evaluation photos are not in the repository (licences), so to rerun, download the photos listed in [`eval/CREDITS.md`](eval/CREDITS.md), save them in `eval/images` with the names shown, and keep `eval/labels.json`.
 
-## Deploy on Vercel
+## Honest limits
 
-The easiest way to deploy Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Small test set, tuned on the same photos, mostly non-Kenyan public photos. This is a first check, not clinical validation.
+- SAM often finds no regions. Possible causes include small dataset images (the Mendeley set is 256 px) and the prompt wording. The affected-percent figures are Spark's estimates, not SAM measurements.
+- Cases are stored in the browser (localStorage). A real deployment needs a database.
+- Map demo cases are simulated.
+- Only lumpy skin disease and mastitis are in focus. Anything else returns a vet visit.
+- Photos are sent to Meta's Model API. While free credits are in use, Meta may use content for product improvement. Do not upload private photos.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Built with AI assistance
+
+This project was built with AI coding assistants (Claude and GitHub Copilot). The veterinary framing, the photo selection, the labels and the evaluation review are the author's own work.
+
+## Credits and licences
+
+- `public/samples/lsd.jpg`: Zebu bull with Lumpy Skin Disease by Monicacomma, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), via Wikimedia Commons.
+- `public/samples/mastitis.jpg`: Gangrenous Teat by Ariya shookh, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), via Wikimedia Commons.
+- Evaluation photos: Lumpy Skin Images Dataset by Sachin Kumar and Sourabh Shastri (Mendeley Data, 2022, DOI 10.17632/w36hpf86j2.1, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)), plus Wikimedia Commons images. Per-photo credits are in [`eval/CREDITS.md`](eval/CREDITS.md).
+
+## Project structure
+
+```
+app/page.tsx           Check page
+app/cases/page.tsx     Case follow-up and demo clock
+app/map/page.tsx       Outbreak map
+app/api/triage/        Server route that calls the Meta models
+lib/triage.ts          Muse Spark + SAM 3.1 pipeline and safety net
+lib/store.ts           Browser storage, case logic, demo data
+scripts/eval.mjs       Evaluation runner
+eval-results.md        Latest evaluation table
+```

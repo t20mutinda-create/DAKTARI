@@ -103,13 +103,17 @@ async function countSkinLesionRegions(
 const NODULE_ALERT_COUNT = 3;
 
 export function applySafetyNet(triage: Triage): Triage {
+  const safeAction = triage.urgency === "isolate_and_report"
+    ? "Isolate the animal, do not move or sell animals, restrict visitors, and contact a vet or the county veterinary office."
+    : "Contact a vet or the county veterinary office.";
+  const safeTriage = { ...triage, recommended_action: safeAction };
   const regionCount = Math.max(triage.nodule_count ?? 0, triage.segmented_lesion_regions ?? 0);
   if (regionCount < NODULE_ALERT_COUNT || triage.urgency === "isolate_and_report") {
-    return triage;
+    return safeTriage;
   }
 
   return {
-    ...triage,
+    ...safeTriage,
     urgency: "isolate_and_report",
     headline: "Multiple nodule-like regions detected; isolate and report",
     recommended_action: [
@@ -147,6 +151,7 @@ export async function runTriage(
         role: "system",
         content:
           "You provide cautious livestock photo triage support, not a diagnosis. Identify visible signs only. " +
+          "Animals only. Never give treatment, drug, dosing or home-care advice and never name medicines. In recommended_action you may only say to isolate the animal, not move or sell animals, restrict visitors, and contact a vet or the county veterinary office. " +
           "Use isolate_and_report for suspected highly contagious or notifiable disease; vet_visit when examination is needed; " +
           "otherwise monitor. Give conservative advice and recommend contacting a veterinarian for concerning signs. " +
           "Return JSON with urgency (monitor, vet_visit, isolate_and_report), headline, possible_conditions (string array), " +

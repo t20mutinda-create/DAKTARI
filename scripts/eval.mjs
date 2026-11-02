@@ -63,18 +63,22 @@ const exact = scored.filter((r) => r.predicted === r.expected).length;
 const safe = scored.filter((r) => RANK[r.predicted] >= RANK[r.expected]).length;
 const emergencies = scored.filter((r) => r.expected === "isolate_and_report");
 const missed = emergencies.filter((r) => r.predicted !== "isolate_and_report").length;
+const falseAlarms = scored.filter(
+  (r) => r.expected !== "isolate_and_report" && r.predicted === "isolate_and_report"
+).length;
 
 const summary = [
   `Photos checked: ${scored.length} of ${rows.length}`,
   `Exact match with vet label: ${exact} (${Math.round((exact / scored.length) * 100)}%)`,
   `Same or safer than vet label: ${safe} (${Math.round((safe / scored.length) * 100)}%)`,
   `Emergencies missed: ${missed} of ${emergencies.length}`,
+  `False alarms: ${falseAlarms}`,
 ].join("\n");
 
 console.log("\n" + summary);
 const table = rows.map((r) => `| ${r.file} | ${r.expected} | ${r.predicted} | ${r.regions} |`).join("\n");
 writeFileSync(
   "eval-results.md",
-  `# Daktari evaluation\n\n${summary.replace(/\n/g, "  \n")}\n\n| Photo | Vet label | Daktari | SAM / model measurement |\n|---|---|---|---|\n${table}\n\nAffected-percent values are model estimates, not SAM measurements.\n`
+  `# Daktari evaluation\n\n${summary.split("\n").map((line) => `- ${line}`).join("\n")}\n\n| Photo | Vet label | Daktari | SAM / model measurement |\n|---|---|---|---|\n${table}\n\nAffected-percent values are model estimates, not SAM measurements.\n`
 );
 console.log("Saved eval-results.md");
