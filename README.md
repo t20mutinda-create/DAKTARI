@@ -100,7 +100,7 @@ The first run missed 8 of 10 emergencies. Labels were reviewed and the pipeline 
 
 ## Built with AI assistance
 
-This project was built with AI coding assistants (Claude and GitHub Copilot). The veterinary framing, the photo selection, the labels and the evaluation review are the author's own work.
+This project was built with GitHub Copilot. The veterinary framing, the photo selection, the labels and the evaluation review are the author's own work.
 
 ## Credits and licences
 
