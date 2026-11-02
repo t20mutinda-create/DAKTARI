@@ -81,9 +81,11 @@ https://daktari-nine.vercel.app/ runs the same app on the author's own API credi
 
 Run on 20 public photos (skin nodules, udder problems and healthy animals), labeled with the urgency a vet would advise by the author, a veterinary medicine student. Full table: [`eval-results.md`](eval-results.md).
 
-- Exact match with the label: 14 of 20 (70%)
-- Emergencies (`isolate_and_report`) missed: 4 of 10; false alarms: 1
+- Exact match with the label: 10 of 20 (50%)
+- Emergencies (`isolate_and_report`) missed: 7 of 10; false alarms: 0
 - SAM found at least one region in only 4 of 20 photos, so Spark does most of the work today
+
+Next steps come from vet-written protocols per urgency level, so the AI never improvises medical advice.
 
 The first run missed 8 of 10 emergencies. Labels were reviewed and the pipeline changed in between, so the runs are not exactly comparable. Rerun with `node scripts/eval.mjs` while the app is running. The evaluation photos are not in the repository (licences), so to rerun, download the photos listed in [`eval/CREDITS.md`](eval/CREDITS.md), save them in `eval/images` with the names shown, and keep `eval/labels.json`.
 

@@ -128,6 +128,12 @@ export function applySafetyNet(triage: Triage): Triage {
   };
 }
 
+const TIER_ACTIONS: Record<Urgency, string> = {
+  monitor: "Keep the animal where you can check it every day. Take a new photo in 2 to 3 days in daylight from the same angle. Call a vet if it gets worse, stops eating, or new lumps or swelling appear.",
+  vet_visit: "Arrange for a vet to examine the animal within 1 to 2 days, or the same day if it is off feed, lying down, or the udder is hot and swollen. Note when the signs started and what has changed, and take a new photo each day.",
+  isolate_and_report: "Separate the animal from the herd, do not move or sell animals from the farm, limit visitors and shared equipment, and report to your vet or the county veterinary office today.",
+};
+
 export async function runTriage(
   image: Buffer,
   mimeType: string,
@@ -155,15 +161,15 @@ export async function runTriage(
           "Use isolate_and_report for suspected highly contagious or notifiable disease; vet_visit when examination is needed; " +
           "otherwise monitor. Give conservative advice and recommend contacting a veterinarian for concerning signs. " +
           "Return JSON with urgency (monitor, vet_visit, isolate_and_report), headline, possible_conditions (string array), " +
-          "recommended_action, vet_handoff_note, nodule_count (number or null), affected_percent (0-100 or null). " +
+          "recommended_action: one short sentence (it will be replaced by standard steps; never give treatment advice), " +
+          "vet_handoff_note, nodule_count (number or null), affected_percent (0-100 or null). " +
           "Also include segment_skin_lesions (boolean): set true when visible raised lumps, nodules, bumps, or other " +
           "skin changes could benefit from pixel segmentation, including small, distant, subtle, or uncertain lesions. " +
           "If any possible condition involves skin lesions, set this to true rather than skipping segmentation. " +
           "Only estimate nodule count and affected percent " +
           "when skin lesions are clearly visible; otherwise use null.\n\n" +
           "Cattle reference context (supporting distinctions, not diagnoses):\n" +
-          "- Lumpy skin concern: if machine measurements show 3 or more nodule-like regions, treat it as several nodules. " +
-          "If any raised lumps are visible, never choose monitor. If unsure whether a lump is a nodule, choose isolate_and_report.\n" +
+          "- Lumpy skin concern: choose isolate_and_report only when several distinct raised nodules are visible, or when machine measurements show 3 or more nodule-like regions. If the signs are crusting, hair loss or redness, or one or two uncertain lumps without several distinct nodules, choose vet_visit and list lumpy skin disease as a possibility to rule out. If any raised lumps are visible, never choose monitor.\n" +
           "- Mastitis concern increases from abnormal milk, to quarter inflammation, to systemic illness signs.\n" +
           "- Pseudo-lumpy-skin lesions may be superficial with depressed centers and heal without deep scars.\n" +
           "- Papillomatosis may cause rough, wart-like growths, often on young cattle's head, neck, or shoulders.\n" +
@@ -213,11 +219,12 @@ export async function runTriage(
       )
     : null;
 
-  return applySafetyNet({
+  const result = applySafetyNet({
     ...assessment,
     segmented_lesion_regions: segmentation?.count ?? null,
     segmented_lesion_boxes: segmentation?.boxes ?? null,
     segmentation_frame_width: frameSize?.width ?? null,
     segmentation_frame_height: frameSize?.height ?? null,
   });
+  return { ...result, recommended_action: TIER_ACTIONS[result.urgency] };
 }
