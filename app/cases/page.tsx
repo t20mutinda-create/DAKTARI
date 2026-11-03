@@ -48,7 +48,7 @@ export default function CasesPage() {
       const blob = await resizeImage(file);
       const last = c.visits[c.visits.length - 1];
       const t = await postTriage(blob, "", summarizeVisit(last));
-      const thumb = await blobToDataUrl(await resizeImage(blob, 240, 0.7));
+      const thumb = await blobToDataUrl(await resizeImage(blob, 240, 0.7, 1));
       const visit = makeVisit(day, t, thumb);
       const verdict = assessTrend(last, visit);
       const updated = cases.map((x) =>

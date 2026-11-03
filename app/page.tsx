@@ -62,8 +62,9 @@ export default function CheckPage() {
     setSaved(null);
     try {
       const blob = await resizeImage(file);
+      setPreview(await blobToDataUrl(blob));
       const t = await postTriage(blob, description);
-      const thumb = await blobToDataUrl(await resizeImage(blob, 240, 0.7));
+      const thumb = await blobToDataUrl(await resizeImage(blob, 240, 0.7, 1));
       const c = newCase(animal, county, getDay(), t, thumb);
       saveCases([c, ...loadCases()]);
       setResult(t);

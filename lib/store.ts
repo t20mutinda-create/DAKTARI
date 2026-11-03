@@ -216,7 +216,7 @@ export function blobToDataUrl(blob: Blob): Promise<string> {
   });
 }
 
-export function resizeImage(file: Blob, maxDimension = 1280, quality = 0.85): Promise<Blob> {
+export function resizeImage(file: Blob, maxDimension = 1280, quality = 0.85, zoom = 1.08): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const image = new Image();
     const url = URL.createObjectURL(file);
@@ -231,7 +231,19 @@ export function resizeImage(file: Blob, maxDimension = 1280, quality = 0.85): Pr
         reject(new Error("Your browser could not process this photo."));
         return;
       }
-      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      const cropWidth = image.naturalWidth / zoom;
+      const cropHeight = image.naturalHeight / zoom;
+      context.drawImage(
+        image,
+        (image.naturalWidth - cropWidth) / 2,
+        (image.naturalHeight - cropHeight) / 2,
+        cropWidth,
+        cropHeight,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
       canvas.toBlob(
         (blob) => (blob ? resolve(blob) : reject(new Error("Could not resize the selected photo."))),
         "image/jpeg",
