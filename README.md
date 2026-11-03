@@ -79,15 +79,28 @@ https://daktari-nine.vercel.app/ runs the same app on the author's own API credi
 
 ## Evaluation
 
-Run on 20 public photos (skin nodules, udder problems and healthy animals), labeled with the urgency a vet would advise by the author, a veterinary medicine student. Full table: [`eval-results.md`](eval-results.md).
+I labeled 20 public photos (lumpy skin disease, mastitis and healthy animals) with the urgency a vet would advise. I am the only labeler. Full table: [`eval-results.md`](eval-results.md).
 
-- Exact match with the label: 10 of 20 (50%)
-- Emergencies (`isolate_and_report`) missed: 7 of 10; false alarms: 0
-- SAM found at least one region in only 4 of 20 photos, so Spark does most of the work today
+- Exact match with my label: 11 of 20 (55%). Same or safer: 13 of 20 (65%)
+- Emergencies (`isolate_and_report`) caught: 3 of 10. Missed: 7 of 10
+- Photos wrongly flagged `isolate_and_report`: 0
+
+Daktari under-calls emergencies: the 7 misses were rated lower than my label. SAM found regions in few photos and many public photos are small, so Muse Spark does most of the work today. Results vary slightly between runs and a few requests timed out, so treat these numbers as a first check, not validation.
+
+In my tests, the first run missed 8 of 10 emergencies, the next missed 4 of 11, and a later run missed 7 of 10 with no false isolate-and-report alarms. Labels and the pipeline changed between runs, so they are not exactly comparable.
 
 Next steps come from vet-written protocols per urgency level, so the AI never improvises medical advice.
 
-The first run missed 8 of 10 emergencies. Labels were reviewed and the pipeline changed in between, so the runs are not exactly comparable. Rerun with `node scripts/eval.mjs` while the app is running. The evaluation photos are not in the repository (licences), so to rerun, download the photos listed in [`eval/CREDITS.md`](eval/CREDITS.md), save them in `eval/images` with the names shown, and keep `eval/labels.json`.
+## Field feedback from a veterinarian
+
+Dr. Maina, a practising veterinarian and my former internship supervisor, tried Daktari with a photo from a real case and told me: "I've tried it out, it's top notch." He agreed that I could quote him. This is one vet's feedback about using the app, not a clinical validation. He said what he'd want changed or included is more skin related diseases.
+
+## What's next
+
+- Test on real Kenyan field photos with vets, and have a second vet review the labels
+- Add look-alike conditions such as ringworm (dermatophytosis) to the prompt
+- WhatsApp channel, Swahili voice notes (Swahili is not among Muse Voice Transcribe's verified languages, so it needs testing) and a database for cases
+- Free weather data beside cluster alerts, since lumpy skin disease spreads through biting insects
 
 ## Honest limits
 

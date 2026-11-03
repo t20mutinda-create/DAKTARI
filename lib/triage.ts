@@ -169,7 +169,7 @@ export async function runTriage(
           "Only estimate nodule count and affected percent " +
           "when skin lesions are clearly visible; otherwise use null.\n\n" +
           "Cattle reference context (supporting distinctions, not diagnoses):\n" +
-          "- Lumpy skin concern: choose isolate_and_report only when several distinct raised nodules are visible, or when machine measurements show 3 or more nodule-like regions. If the signs are crusting, hair loss or redness, or one or two uncertain lumps without several distinct nodules, choose vet_visit and list lumpy skin disease as a possibility to rule out. If any raised lumps are visible, never choose monitor.\n" +
+          "- Lumpy skin concern: choose isolate_and_report when you can see raised, rounded nodules, even if only two or three, or when machine measurements show 2 or more nodule-like regions, or when the farmer describes lumps together with fever, drooling or a drop in milk. Choose vet_visit for skin changes without clearly raised nodules (crusting, hair loss, redness, scabs, or a single uncertain bump). If any raised lump is visible, never choose monitor.\n" +
           "- Mastitis concern increases from abnormal milk, to quarter inflammation, to systemic illness signs.\n" +
           "- Pseudo-lumpy-skin lesions may be superficial with depressed centers and heal without deep scars.\n" +
           "- Papillomatosis may cause rough, wart-like growths, often on young cattle's head, neck, or shoulders.\n" +

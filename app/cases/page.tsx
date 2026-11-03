@@ -17,6 +17,7 @@ import {
 } from "@/lib/store";
 import { URGENCY } from "@/lib/types";
 import type { Case } from "@/lib/types";
+import { useTriageProgress } from "@/lib/useTriageProgress";
 
 type Note = { message: string; escalate: boolean };
 
@@ -26,6 +27,7 @@ export default function CasesPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, Note>>({});
   const [error, setError] = useState<string | null>(null);
+  const { label: progressLabel, reset: resetProgress } = useTriageProgress(busy !== null);
 
   function fastForward() {
     const next = day + 1;
@@ -39,6 +41,7 @@ export default function CasesPage() {
   }
 
   async function followUp(c: Case, file: File) {
+    resetProgress();
     setBusy(c.id);
     setError(null);
     try {
@@ -155,7 +158,7 @@ export default function CasesPage() {
                     />
                     {busy === c.id && (
                       <p role="status" className="mt-2 font-semibold text-emerald-950">
-                        Measuring… Reasoning…
+                        {progressLabel}
                       </p>
                     )}
                   </div>

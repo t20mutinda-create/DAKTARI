@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import ResultCard from "@/components/ResultCard";
+import { useTriageProgress } from "@/lib/useTriageProgress";
 import {
   COUNTIES,
   blobToDataUrl,
@@ -32,6 +33,7 @@ export default function CheckPage() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Triage | null>(null);
   const [saved, setSaved] = useState<Case | null>(null);
+  const { label: progressLabel, reset: resetProgress } = useTriageProgress(loading);
 
   function pick(f: File | null) {
     setFile(f);
@@ -53,6 +55,7 @@ export default function CheckPage() {
 
   async function onCheck() {
     if (!file) return;
+    resetProgress();
     setLoading(true);
     setError(null);
     setResult(null);
@@ -151,15 +154,11 @@ export default function CheckPage() {
           <button
             onClick={onCheck}
             disabled={!file || loading}
+            aria-live="polite"
             className="mt-5 min-h-12 w-full rounded-xl bg-emerald-900 px-4 py-3 text-base font-bold text-white transition hover:bg-emerald-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-950 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading ? "Working…" : "Check this animal"}
+            {loading ? progressLabel : "Check this animal"}
           </button>
-          {loading && (
-            <p role="status" className="mt-3 text-center text-sm font-semibold text-emerald-950">
-              Measuring… Reasoning…
-            </p>
-          )}
           {error && <p className="mt-3 rounded-xl bg-red-50 p-3 text-sm font-medium text-red-900">{error}</p>}
         </div>
 
